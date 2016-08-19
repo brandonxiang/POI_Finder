@@ -1,0 +1,3 @@
+[submodule "geojson-python-utils"]
+	path = geojson-python-utils
+	url = https://github.com/brandonxiang/geojson-python-utils.git
