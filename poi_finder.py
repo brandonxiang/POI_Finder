@@ -22,7 +22,7 @@ class poi_finder():
     def _dump_geojson(self, results, output, keyword):
         features = []
         for result in results:
-            point = Point((result["lat"], result["lng"]))
+            point = Point((result["lng"], result["lat"]))
             feature = Feature(geometry=point, properties={'name':result["name"], 'address': result["address"] })
             features.append(feature)
         geojson = FeatureCollection(features)
@@ -84,8 +84,8 @@ class amap_finder(poi_finder):
         for poi in pois:
             location = poi["location"].split(",")
             result = {}
-            result["lat"] = float(location[0])
-            result["lng"] = float(location[1])
+            result["lat"] = float(location[1])
+            result["lng"] = float(location[0])
             result["name"] = poi["name"]
             result["address"] = poi["address"]
             results.append(result)
@@ -170,7 +170,7 @@ class baidu_finder(poi_finder):
         while(True):
             params["page_num"] = page
             result = self._request(self.__url, params)
-            
+
             pois.extend(result["results"])
             if len(result["results"]) < offset:
                 break
@@ -192,6 +192,8 @@ class baidu_finder(poi_finder):
         return results
 
 def main():
+    finder = qq_finder()
+    finder.download()
     finder = baidu_finder()
     finder.download()
 
