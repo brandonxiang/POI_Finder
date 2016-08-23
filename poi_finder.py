@@ -142,9 +142,57 @@ class qq_finder(poi_finder):
             results.append(result)
         return results
 
+class baidu_finder(poi_finder):
+
+    def __init__(self):
+        conf  = configparser.ConfigParser()
+        conf.read("./myconf.conf", encoding="utf-8")
+        keywords = str(conf.get("baidu", "keywords")) 
+        keywords = re.split(",|，",keywords)
+        output = conf.get("baidu","output")
+        super().__init__(keywords, output)
+        self.__url = conf.get("baidu", "url")
+        self.__params = {
+            "ak": conf.get("baidu", "key"),
+            "page_size": conf.get("baidu", "page_size"),
+            "region": conf.get("baidu", "city"),
+            "output": conf.get("baidu","type")
+        }
+        
+
+    def _download(self, keyword):
+        offset = int(self.__params["page_size"])
+        params = self.__params
+        params["q"] = keyword
+        pois = []
+        page = 0
+
+        while(True):
+            params["page_num"] = page
+            result = self._request(self.__url, params)
+            
+            pois.extend(result["results"])
+            if len(result["results"]) < offset:
+                break
+            page += 1
+        print(keyword, page, len(pois))
+        return pois
+
+   
+    def _parse(self, pois):
+        results = []
+        for poi in pois:
+            location = poi["location"]
+            result = {}
+            result["lat"] = location['lat']
+            result["lng"] = location['lng']
+            result["name"] = poi["name"]
+            result["address"] = poi["address"]
+            results.append(result)
+        return results
 
 def main():
-    finder = amap_finder()
+    finder = baidu_finder()
     finder.download()
 
 if __name__ == '__main__':
