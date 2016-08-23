@@ -4,6 +4,7 @@ import requests
 import re
 import time
 from geojson import Feature, FeatureCollection, Point, dump
+from coordTransform_utils import bd09togcj02
 try:
     import configparser
 except:
@@ -184,16 +185,14 @@ class baidu_finder(poi_finder):
         for poi in pois:
             location = poi["location"]
             result = {}
-            result["lat"] = location['lat']
-            result["lng"] = location['lng']
+            result["lng"], result["lat"] = bd09togcj02(location['lng'], location['lat'])
             result["name"] = poi["name"]
             result["address"] = poi["address"]
             results.append(result)
         return results
 
+
 def main():
-    finder = qq_finder()
-    finder.download()
     finder = baidu_finder()
     finder.download()
 
