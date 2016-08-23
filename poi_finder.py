@@ -2,6 +2,7 @@ from __future__ import print_function
 import json
 import requests
 import re
+import time
 from geojson import Feature, FeatureCollection, Point, dump
 try:
     import configparser
@@ -9,6 +10,10 @@ except:
     import ConfigParser as configparser
 
 class poi_finder():
+
+    def __init__(self, keywords, output):
+        self.__keywords = keywords
+        self.__output  = output
 
     def _request(self, url, params):
         req = requests.get(url, params)
@@ -24,25 +29,6 @@ class poi_finder():
         with open(output+'/'+ keyword + '.json' , 'w', encoding="utf-8") as fp:
             dump(geojson, fp)
 
-
-class amap_finder(poi_finder):
-    def __init__(self):
-        self.getParameters()
-
-    def getParameters(self):
-        conf  = configparser.ConfigParser()
-        conf.read("./myconf.conf", encoding="utf-8")
-        self.__url = conf.get("amap", "url")
-        self.__params = {
-            "key": conf.get("amap", "key"),
-            "offset": conf.get("amap", "offset"),
-            "citylimit":conf.get("amap", "citylimit"),
-            "city":conf.get("amap", "city")
-        }
-        keywords = str(conf.get("amap", "keywords")) 
-        self.__keywords = re.split(",|，",keywords)
-        self.__output = conf.get("amap","output")
-
     def download(self):
         keywords = self.__keywords
         output = self.__output
@@ -50,13 +36,38 @@ class amap_finder(poi_finder):
             pois = self._download(keyword)
             results = self._parse(pois)
             self._dump_geojson(results, output, keyword)
+
+    def _download(self,keyword):
+        pass
+    
+    def _parse(self,pois):
+        pass
+
+
+class amap_finder(poi_finder):
+
+    def __init__(self):
+        conf  = configparser.ConfigParser()
+        conf.read("./myconf.conf", encoding="utf-8")
+        keywords = str(conf.get("amap", "keywords")) 
+        keywords = re.split(",|，",keywords)
+        output = conf.get("amap","output")
+        super().__init__(keywords, output)
+        self.__url = conf.get("amap", "url")
+        self.__params = {
+            "key": conf.get("amap", "key"),
+            "offset": conf.get("amap", "offset"),
+            "citylimit":conf.get("amap", "citylimit"),
+            "city":conf.get("amap", "city")
+        }
             
     def _download(self, keyword):
-        pois = []
-        page = 1
         offset = int(self.__params["offset"])
         params = self.__params
         params["keywords"] = keyword
+        pois = []
+        page = 1
+       
         while(True):
             params["page"] = page
             result = self._request(self.__url, params)
@@ -64,7 +75,7 @@ class amap_finder(poi_finder):
             if len(result["pois"]) < offset:
                 break
             page += 1
-        print(page, len(pois))
+        print(keyword, page, len(pois))
         return pois
 
    
@@ -76,6 +87,57 @@ class amap_finder(poi_finder):
             result["lat"] = float(location[0])
             result["lng"] = float(location[1])
             result["name"] = poi["name"]
+            result["address"] = poi["address"]
+            results.append(result)
+        return results
+
+class qq_finder(poi_finder):
+
+    def __init__(self):
+        conf  = configparser.ConfigParser()
+        conf.read("./myconf.conf", encoding="utf-8")
+        keywords = str(conf.get("qq", "keywords")) 
+        keywords = re.split(",|，",keywords)
+        output = conf.get("qq","output")
+        super().__init__(keywords, output)
+        self.__url = conf.get("qq", "url")
+        self.__params = {
+            "key": conf.get("qq", "key"),
+            "page_size": conf.get("qq", "page_size"),
+            "boundary":"region("+conf.get("qq", "city")+",0)"
+        }
+        
+
+    def _download(self, keyword):
+        offset = int(self.__params["page_size"])
+        params = self.__params
+        params["keyword"] = keyword
+        pois = []
+        page = 1
+
+        while(True):
+            params["page_index"] = page
+            result = self._request(self.__url, params)
+            if "data" not in result:
+                time.sleep(0.5)
+                result = self._request(self.__url, params)
+
+            pois.extend(result["data"])
+            if len(result["data"]) < offset:
+                break
+            page += 1
+        print(keyword, page, len(pois))
+        return pois
+
+   
+    def _parse(self, pois):
+        results = []
+        for poi in pois:
+            location = poi["location"]
+            result = {}
+            result["lat"] = location['lat']
+            result["lng"] = location['lng']
+            result["name"] = poi["title"]
             result["address"] = poi["address"]
             results.append(result)
         return results
