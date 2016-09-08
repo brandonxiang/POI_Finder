@@ -39,19 +39,24 @@ def simplify_other(major, minor, dist):
     return result
 
 
-def main():
-    with open("G:/brandon/greenway/0819/qq/公厕.json", "r",encoding="utf-8") as fp:
+def operate(name):
+    with open("G:/brandon/greenway/0819/qq/%s.json"%(name), "r",encoding="utf-8") as fp:
         qq = json.load(fp)
-    with open("G:/brandon/greenway/0819/amap/公厕.json","r",encoding="utf-8") as fp:
+    with open("G:/brandon/greenway/0819/amap/%s.json"%(name),"r",encoding="utf-8") as fp:
         amap = json.load(fp)
-    with open("G:/brandon/greenway/0819/baidu/公厕.json","r",encoding="utf-8") as fp:
+    with open("G:/brandon/greenway/0819/baidu/%s.json"%(name),"r",encoding="utf-8") as fp:
         baidu = json.load(fp)
     merge1 = simplify_other(qq, amap, 20)
     merge2 = simplify_other(merge1, baidu, 20)
     print(merge2)
-    with open("G:/brandon/greenway/0819/merge2.json","w",encoding="utf-8") as fp:
+    with open("G:/brandon/greenway/0819/%s.json"%(name),"w",encoding="utf-8") as fp:
         json.dump(merge2, fp)
 
+def main():
+    # names = ["自行车租赁点","驿站","停车场","景点","公交站"]
+    names = ["公厕"]
+    for name in names:
+        operate(name)
 
 if __name__ == '__main__':
     main()
